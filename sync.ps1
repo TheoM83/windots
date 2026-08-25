@@ -32,7 +32,7 @@ $RepoRoot  = $PSScriptRoot
 $ConfigDir = Join-Path $RepoRoot 'config'
 $DocsDir   = Join-Path $RepoRoot 'docs'
 
-function Write-Ok      { param([string] $M) Write-Host '  [~] ' -NoNewline -ForegroundColor Yellow;   Write-Host $M }
+function Write-Changed { param([string] $M) Write-Host '  [~] ' -NoNewline -ForegroundColor Yellow;   Write-Host $M }
 function Write-Same    { param([string] $M) Write-Host '  [=] ' -NoNewline -ForegroundColor DarkGray; Write-Host $M -ForegroundColor DarkGray }
 function Write-Missing { param([string] $M) Write-Host '  [?] ' -NoNewline -ForegroundColor DarkYellow; Write-Host $M -ForegroundColor DarkYellow }
 
@@ -68,7 +68,7 @@ function Copy-IntoRepo {
     $dir = Split-Path -Parent $Repo
     if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
     Copy-Item -LiteralPath $Live -Destination $Repo -Force
-    Write-Ok "$Label updated"
+    Write-Changed "$Label updated"
 }
 
 # ------------------------------------------------------------------ files
@@ -115,7 +115,7 @@ function Sync-TerminalSettings {
     if (-not $PSCmdlet.ShouldProcess($Repo, "update from $Live")) { return }
 
     Write-RepoText -Path $Repo -Content $json
-    Write-Ok 'Windows Terminal settings updated (profiles.list and defaultProfile stripped)'
+    Write-Changed 'Windows Terminal settings updated (profiles.list and defaultProfile stripped)'
 }
 
 Sync-TerminalSettings `
@@ -186,7 +186,7 @@ if (Test-RepoTextCurrent -Path $versionsPath -Content $versions) {
 } elseif ($PSCmdlet.ShouldProcess($versionsPath, 'regenerate')) {
     if (-not (Test-Path -LiteralPath $DocsDir)) { New-Item -ItemType Directory -Force -Path $DocsDir | Out-Null }
     Write-RepoText -Path $versionsPath -Content $versions
-    Write-Ok 'docs/VERSIONS.md'
+    Write-Changed 'docs/VERSIONS.md'
 }
 
 # ------------------------------------------------------------------ report

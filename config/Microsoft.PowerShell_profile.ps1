@@ -15,10 +15,24 @@ $ProfileStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 # Two things below must not happen in a one-shot session: the predictor subsystem keeps
 # the runspace alive so the process never exits, and PSReadLine's prediction options throw
 # when there is no real console. Both are pure ergonomics — a script loses nothing.
-$IsInteractiveShell = -not (
-    [Environment]::GetCommandLineArgs() |
-        Where-Object { $_ -match '^-+(c|command|f|file|e|ec|encodedcommand)$' }
-)
+#
+# PowerShell accepts any unambiguous prefix of a switch (-c, -com, -Command all work), so
+# match tokens against the start of each switch name rather than against a fixed list.
+# Only look at things that are actually switches, so a command's own text cannot match.
+$__switches = [Environment]::GetCommandLineArgs() |
+    Where-Object { $_ -like '-*' -or $_ -like '/*' } |
+    ForEach-Object { $_.TrimStart('-', '/').ToLowerInvariant() } |
+    Where-Object { $_ }
+
+$__isOneShot = [bool] ($__switches | Where-Object {
+    $t = $_
+    'command', 'file', 'encodedcommand' | Where-Object { $_.StartsWith($t) }
+})
+# -NoExit hands the session back to the user afterwards, so it is interactive after all.
+$__staysOpen = [bool] ($__switches | Where-Object { 'noexit'.StartsWith($_) })
+
+$IsInteractiveShell = (-not $__isOneShot) -or $__staysOpen
+Remove-Variable __switches, __isOneShot, __staysOpen
 
 # ---------------------------------------------------------------- 1. environment
 [Console]::OutputEncoding = [Text.Encoding]::UTF8

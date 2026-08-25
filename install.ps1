@@ -256,7 +256,9 @@ function Install-Packages {
 # Everything past this point wants PowerShell 7: module scope, $PROFILE target and
 # the JSON merge all differ under Windows PowerShell 5.1.
 function Invoke-RelaunchUnderPwsh {
-    if ($PSVersionTable.PSEdition -eq 'Core') { return $false }
+    # Returns only when we are already on pwsh 7. Otherwise it runs the rest of the install
+    # in a child pwsh and exits with that child's code -- control never comes back here.
+    if ($PSVersionTable.PSEdition -eq 'Core') { return }
 
     Update-SessionPath
     $pwsh = Get-Command pwsh -ErrorAction Ignore
@@ -324,10 +326,17 @@ function Install-Modules {
 # ============================================================ 4. font
 
 function Test-FontPresent {
-    $key = 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts'
-    if (-not (Test-Path $key)) { return $false }
-    $props = (Get-ItemProperty -Path $key).PSObject.Properties.Name
-    [bool] ($props | Where-Object { $_ -like 'CaskaydiaCoveNerdFontMono*' })
+    # Per-user first, but a machine-wide install counts too -- re-downloading 30 MB of
+    # font because someone installed it for all users would be daft.
+    foreach ($key in 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts',
+                     'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts') {
+        if (-not (Test-Path $key)) { continue }
+        $props = (Get-ItemProperty -Path $key).PSObject.Properties.Name
+        if ($props | Where-Object { $_ -like 'CaskaydiaCove*NF*' -or $_ -like 'CaskaydiaCoveNerdFontMono*' }) {
+            return $true
+        }
+    }
+    return $false
 }
 
 function Install-NerdFont {
@@ -421,6 +430,12 @@ function Install-GitConfig {
 
     if (-not (Test-Command 'git')) { Write-Warn 'git not on PATH -- include not registered'; return }
 
+    # Every branch below writes to ~/.gitconfig one way or another, so snapshot it up front
+    # rather than in whichever branch happens to run first.
+    if ($PSCmdlet.ShouldProcess('~/.gitconfig', 'back up before modifying')) {
+        Backup-Once (Join-Path $HOME '.gitconfig')
+    }
+
     # git expands `~` to an absolute path when it *writes* the value, and it mixes separators
     # doing so, so the registered entry never matches the string we passed in. Compare
     # normalised paths, or every run appends another copy of the same include.
@@ -438,7 +453,6 @@ function Install-GitConfig {
             Write-Ok "include.path deduplicated ($($hits.Count) copies -> 1)"
         }
     } elseif ($PSCmdlet.ShouldProcess('~/.gitconfig', "add include.path $include")) {
-        Backup-Once (Join-Path $HOME '.gitconfig')
         & git config --global --add include.path $include
         Write-Ok "include.path $include"
     }
@@ -644,7 +658,7 @@ Invoke-Preflight
 
 if (-not $SkipPackages) { Install-Packages } else { Write-Step 'winget packages'; Write-Skip 'skipped' }
 
-if (Invoke-RelaunchUnderPwsh) { return }   # never returns: the child process does the rest
+Invoke-RelaunchUnderPwsh
 
 if (-not $SkipModules)  { Install-Modules }   else { Write-Step 'PowerShell modules'; Write-Skip 'skipped' }
 if (-not $SkipFont)     { Install-NerdFont }  else { Write-Step 'Nerd Font';          Write-Skip 'skipped' }

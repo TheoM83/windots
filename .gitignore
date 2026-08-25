@@ -1,11 +1,11 @@
 # Generated at first shell start, never bundled
 gh-completion.ps1
 
-# Backups written by install.ps1
-*.bak
+# Pre-windots originals kept by install.ps1
+*.windots-backup
 
-# Local, machine-specific overrides (sourced by the profile if present)
-config/profile.local.ps1
+# Machine-specific profile override, dot-sourced last by the profile
+profile.local.ps1
 
 # OS / editor noise
 Thumbs.db
