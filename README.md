@@ -133,6 +133,10 @@ tracked, and it wins over everything above it.
   names (`l`, `ll`, `view`, `less`) because they emit text, which is for reading, not piping.
 - **F1 / F2 need PSReadLine ≥ 2.4** (`ShowCommandHelp`, `SwitchPredictionView`). That comes
   with PowerShell 7.6; on an older pwsh the installer warns instead of silently degrading.
+- **CompletionPredictor only loads for an interactive prompt.** Its predictor subsystem
+  keeps the runspace alive, so importing it in a one-shot session makes `pwsh -Command …`
+  and `pwsh -File …` hang instead of exiting. The profile detects the process command line
+  and skips it — along with the PSReadLine prediction options — outside an interactive shell.
 - **7-Zip is not in the package list.** `extract` handles `.7z` only if `7z` is on PATH.
   `winget install 7zip.7zip` if you want it.
 - **Windows Terminal must have run once** before the installer can merge its settings —
