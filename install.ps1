@@ -15,9 +15,10 @@
       5. config     -- profile, starship, bat, git, Windows Terminal
       6. verify     -- prints what is actually live
 
-    Nothing here needs admin. Existing files are backed up once to <name>.windots-backup
-    before the first overwrite, and the Windows Terminal settings are *merged*, not replaced,
-    so machine-generated profile GUIDs survive.
+    The script itself never needs an elevated shell -- but winget installers that write
+    machine-wide (git among them) will raise their own UAC prompt. Existing files are
+    backed up once to <name>.windots-backup before the first overwrite, and the Windows
+    Terminal settings are *merged*, not replaced, so machine-generated profile GUIDs survive.
 
 .PARAMETER GitUserName
     git user.name to set globally. Skipped if already configured.
@@ -256,6 +257,11 @@ function Install-Packages {
 # Everything past this point wants PowerShell 7: module scope, $PROFILE target and
 # the JSON merge all differ under Windows PowerShell 5.1.
 function Invoke-RelaunchUnderPwsh {
+    # $PSBoundParameters is scoped to the function that declares the parameters, so the
+    # script's own must be handed in explicitly -- reading it here would see an empty
+    # dictionary and silently drop every -Skip* switch on the way to the child.
+    param([System.Collections.IDictionary] $Bound = @{})
+
     # Returns only when we are already on pwsh 7. Otherwise it runs the rest of the install
     # in a child pwsh and exits with that child's code -- control never comes back here.
     if ($PSVersionTable.PSEdition -eq 'Core') { return }
@@ -267,8 +273,9 @@ function Invoke-RelaunchUnderPwsh {
     }
 
     Write-Step 'Relaunching under PowerShell 7'
+    # -SkipPackages is forced: this process just did that step.
     $forward = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $PSCommandPath, '-SkipPackages')
-    foreach ($kv in $PSBoundParameters.GetEnumerator()) {
+    foreach ($kv in $Bound.GetEnumerator()) {
         if ($kv.Key -eq 'SkipPackages') { continue }
         if ($kv.Value -is [switch]) {
             if ($kv.Value.IsPresent) { $forward += "-$($kv.Key)" }
@@ -276,6 +283,8 @@ function Invoke-RelaunchUnderPwsh {
             $forward += @("-$($kv.Key)", [string] $kv.Value)
         }
     }
+    Write-Skip "forwarding: $(($forward | Select-Object -Skip 5) -join ' ')"
+
     & $pwsh.Source @forward
     exit $LASTEXITCODE
 }
@@ -485,6 +494,15 @@ function Set-JsonProperty {
     $Object | Add-Member -MemberType NoteProperty -Name $Name -Value $Value -Force
 }
 
+# `$o.PSObject.Properties.Name -contains 'x'` throws under Set-StrictMode -Version Latest
+# when $o has no properties at all -- which is exactly the case on a machine whose
+# settings.json is missing or corrupt, the one run that most needs to succeed.
+function Test-JsonProperty {
+    param([object] $Object, [string] $Name)
+    if ($null -eq $Object) { return $false }
+    [bool] (@($Object.PSObject.Properties) | Where-Object { $_.Name -eq $Name })
+}
+
 function Merge-TerminalSettings {
     param([string] $Source, [string] $Destination)
 
@@ -509,16 +527,16 @@ function Merge-TerminalSettings {
         'tabWidthMode', 'theme', 'themes', 'useAcrylicInTabRow'
     )
     foreach ($k in $topLevel) {
-        if ($desired.PSObject.Properties.Name -contains $k) {
+        if (Test-JsonProperty $desired $k) {
             Set-JsonProperty $current $k $desired.$k
         }
     }
 
     # 2. profiles.defaults -- ours wins key by key, anything extra locally is kept
-    if (-not ($current.PSObject.Properties.Name -contains 'profiles')) {
+    if (-not (Test-JsonProperty $current 'profiles')) {
         Set-JsonProperty $current 'profiles' ([pscustomobject] @{})
     }
-    if (-not ($current.profiles.PSObject.Properties.Name -contains 'defaults')) {
+    if (-not (Test-JsonProperty $current.profiles 'defaults')) {
         Set-JsonProperty $current.profiles 'defaults' ([pscustomobject] @{})
     }
     foreach ($p in $desired.profiles.defaults.PSObject.Properties) {
@@ -527,7 +545,7 @@ function Merge-TerminalSettings {
 
     # 3. colour schemes -- upsert by name
     $schemes = @()
-    if ($current.PSObject.Properties.Name -contains 'schemes' -and $current.schemes) {
+    if ((Test-JsonProperty $current 'schemes') -and $current.schemes) {
         $schemes = @($current.schemes)
     }
     foreach ($s in @($desired.schemes)) {
@@ -537,9 +555,9 @@ function Merge-TerminalSettings {
 
     # 4. profiles.list stays local (machine GUIDs); only nudge the pwsh entry
     $pwshProfile = $null
-    if ($current.profiles.PSObject.Properties.Name -contains 'list') {
+    if (Test-JsonProperty $current.profiles 'list') {
         $pwshProfile = @($current.profiles.list) |
-            Where-Object { $_.PSObject.Properties.Name -contains 'source' -and
+            Where-Object { (Test-JsonProperty $_ 'source') -and
                            $_.source -eq 'Windows.Terminal.PowershellCore' } |
             Select-Object -First 1
     }
@@ -658,7 +676,7 @@ Invoke-Preflight
 
 if (-not $SkipPackages) { Install-Packages } else { Write-Step 'winget packages'; Write-Skip 'skipped' }
 
-Invoke-RelaunchUnderPwsh
+Invoke-RelaunchUnderPwsh -Bound $PSBoundParameters
 
 if (-not $SkipModules)  { Install-Modules }   else { Write-Step 'PowerShell modules'; Write-Skip 'skipped' }
 if (-not $SkipFont)     { Install-NerdFont }  else { Write-Step 'Nerd Font';          Write-Skip 'skipped' }

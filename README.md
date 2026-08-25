@@ -36,8 +36,9 @@ Full keymap: **[docs/CHEATSHEET.md](docs/CHEATSHEET.md)** (also `cheat` in the s
 
 ## Install
 
-The three lines at the top of this page are the whole thing. No admin, no reboot. Then
-open a new Windows Terminal tab.
+The three lines at the top of this page are the whole thing. No reboot, and the script
+never needs an elevated shell — though winget installers that write machine-wide, git
+among them, raise their own UAC prompt. Then open a new Windows Terminal tab.
 
 Set your git identity at the same time if the machine is fresh:
 
@@ -64,7 +65,8 @@ Flags: `-SkipPackages`, `-SkipModules`, `-SkipFont`, `-SkipTerminal`.
    via PSResourceGet when available. **PSReadLine is not installed**: 2.4.x ships inside
    PowerShell 7.6, and a gallery copy would only shadow it with something older.
 5. **Font** — CaskaydiaCove Nerd Font Mono, downloaded from the Nerd Fonts release and
-   registered under `HKCU`. Per-user, so no elevation.
+   registered under `HKCU`. Per-user, so no elevation. Skipped if the face is already
+   registered for the user or machine-wide.
 6. **Config** — see the table below.
 7. **Verify** — prints the version of every tool it expects, whether the font registered,
    and whether bat can resolve the Catppuccin theme. Failures are summarised at the end

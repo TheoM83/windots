@@ -103,7 +103,8 @@ function Sync-TerminalSettings {
 
     $settings = Get-Content -LiteralPath $Live -Raw | ConvertFrom-Json
     $settings.PSObject.Properties.Remove('defaultProfile')
-    if ($settings.PSObject.Properties.Name -contains 'profiles') {
+    # .PSObject.Properties.Name throws under StrictMode on an object with no properties.
+    if (@($settings.PSObject.Properties) | Where-Object { $_.Name -eq 'profiles' }) {
         $settings.profiles.PSObject.Properties.Remove('list')
     }
     $json = ($settings | ConvertTo-Json -Depth 32) + "`n"

@@ -31,7 +31,7 @@ $__isOneShot = [bool] ($__switches | Where-Object {
 # -NoExit hands the session back to the user afterwards, so it is interactive after all.
 $__staysOpen = [bool] ($__switches | Where-Object { 'noexit'.StartsWith($_) })
 
-$IsInteractiveShell = (-not $__isOneShot) -or $__staysOpen
+$WindotsInteractive = (-not $__isOneShot) -or $__staysOpen
 Remove-Variable __switches, __isOneShot, __staysOpen
 
 # ---------------------------------------------------------------- 1. environment
@@ -62,7 +62,7 @@ $env:FZF_DEFAULT_OPTS    = @(
 Import-Module PSReadLine
 
 Set-PSReadLineOption -EditMode Windows
-if ($IsInteractiveShell -and -not [Console]::IsOutputRedirected) {
+if ($WindotsInteractive -and -not [Console]::IsOutputRedirected) {
     Set-PSReadLineOption -PredictionSource HistoryAndPlugin
     Set-PSReadLineOption -PredictionViewStyle ListView
 }
@@ -157,7 +157,7 @@ if (Get-Module -ListAvailable -Name Terminal-Icons) { Import-Module Terminal-Ico
 
 # CompletionPredictor registers a predictor subsystem that keeps the runspace alive:
 # loading it in a one-shot session makes `pwsh -Command ...` hang instead of exiting.
-if ($IsInteractiveShell -and (Get-Module -ListAvailable -Name CompletionPredictor)) {
+if ($WindotsInteractive -and (Get-Module -ListAvailable -Name CompletionPredictor)) {
     Import-Module CompletionPredictor
 }
 
