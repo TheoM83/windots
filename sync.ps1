@@ -42,6 +42,21 @@ function Get-Sha256 {
     (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
 }
 
+# .gitattributes checks this repo out with CRLF; writing LF here would make every
+# generated file look modified on every run.
+function Write-RepoText {
+    param([string] $Path, [string] $Content)
+    $normalized = $Content -replace "`r`n", "`n" -replace "`n", "`r`n"
+    [System.IO.File]::WriteAllText($Path, $normalized, (New-Object System.Text.UTF8Encoding $false))
+}
+
+function Test-RepoTextCurrent {
+    param([string] $Path, [string] $Content)
+    if (-not (Test-Path -LiteralPath $Path)) { return $false }
+    $normalized = $Content -replace "`r`n", "`n" -replace "`n", "`r`n"
+    (Get-Content -LiteralPath $Path -Raw) -eq $normalized
+}
+
 function Copy-IntoRepo {
     [CmdletBinding(SupportsShouldProcess)]
     param([string] $Live, [string] $Repo, [string] $Label)
@@ -93,13 +108,13 @@ function Sync-TerminalSettings {
     }
     $json = ($settings | ConvertTo-Json -Depth 32) + "`n"
 
-    if ((Test-Path -LiteralPath $Repo) -and ((Get-Content -LiteralPath $Repo -Raw) -eq $json)) {
+    if (Test-RepoTextCurrent -Path $Repo -Content $json) {
         Write-Same 'Windows Terminal settings unchanged'
         return
     }
     if (-not $PSCmdlet.ShouldProcess($Repo, "update from $Live")) { return }
 
-    [System.IO.File]::WriteAllText($Repo, $json, (New-Object System.Text.UTF8Encoding $false))
+    Write-RepoText -Path $Repo -Content $json
     Write-Ok 'Windows Terminal settings updated (profiles.list and defaultProfile stripped)'
 }
 
@@ -166,9 +181,11 @@ $($moduleRows -join "`n")
 "@
 
 $versionsPath = Join-Path $DocsDir 'VERSIONS.md'
-if ($PSCmdlet.ShouldProcess($versionsPath, 'regenerate')) {
+if (Test-RepoTextCurrent -Path $versionsPath -Content $versions) {
+    Write-Same 'docs/VERSIONS.md unchanged'
+} elseif ($PSCmdlet.ShouldProcess($versionsPath, 'regenerate')) {
     if (-not (Test-Path -LiteralPath $DocsDir)) { New-Item -ItemType Directory -Force -Path $DocsDir | Out-Null }
-    [System.IO.File]::WriteAllText($versionsPath, $versions, (New-Object System.Text.UTF8Encoding $false))
+    Write-RepoText -Path $versionsPath -Content $versions
     Write-Ok 'docs/VERSIONS.md'
 }
 

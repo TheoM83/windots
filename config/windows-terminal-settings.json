@@ -25,7 +25,6 @@
       "useAcrylic": false
     }
   },
-  "themes": [],
   "actions": [],
   "alwaysShowTabs": true,
   "copyFormatting": "none",
@@ -111,6 +110,7 @@
   "showTabsInTitlebar": true,
   "tabWidthMode": "titleLength",
   "theme": "dark",
+  "themes": [],
   "useAcrylicInTabRow": true,
   "schemes": [
     {
