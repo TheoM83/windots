@@ -87,11 +87,20 @@ $Modules = @(
     @{ Name = 'PSFzf';               Minimum = '2.7.12' }
 )
 
-# winget exit codes that mean "nothing to do", not "failure"
+# winget exit codes that mean "nothing to do", not "failure". Measured against winget 1.x:
+# a package that is installed and current exits 0 outright, so these two only show up on
+# less common paths -- they cost nothing to keep and stop a benign result reading as a break.
 $BenignWinget = @{
     -1978335135 = 'already installed'
     -1978335189 = 'already up to date'
-    -1978335212 = 'no applicable installer, skipped'
+}
+
+# Codes that must never be swallowed. NO_APPLICATIONS_FOUND means the id matched nothing in
+# the source: a typo in $Packages, or a package that was renamed or withdrawn. Reporting it
+# as a skip would hide a list that has quietly stopped installing something.
+$FatalWinget = @{
+    -1978335212 = 'no package with that id in the winget source'
+    -1978335211 = 'no winget sources are configured'
 }
 
 $script:Warnings = New-Object System.Collections.ArrayList
@@ -244,9 +253,15 @@ function Install-Packages {
             --accept-package-agreements --accept-source-agreements --disable-interactivity | Out-Null
         $code = $LASTEXITCODE
 
-        if ($code -eq 0)                      { Write-Ok   "$id ($($p.Note))" }
-        elseif ($BenignWinget.ContainsKey($code)) { Write-Skip "$id -- $($BenignWinget[$code])" }
-        else                                  { Write-Fail "$id failed (winget exit $code)" }
+        if ($code -eq 0) {
+            Write-Ok "$id ($($p.Note))"
+        } elseif ($BenignWinget.ContainsKey($code)) {
+            Write-Skip "$id -- $($BenignWinget[$code])"
+        } elseif ($FatalWinget.ContainsKey($code)) {
+            Write-Fail "$id -- $($FatalWinget[$code])"
+        } else {
+            Write-Fail "$id failed (winget exit $code)"
+        }
     }
 
     Update-SessionPath
