@@ -1,0 +1,163 @@
+{
+  "$help": "https://aka.ms/terminal-documentation",
+  "$schema": "https://aka.ms/terminal-profiles-schema",
+  "profiles": {
+    "defaults": {
+      "antialiasingMode": "grayscale",
+      "bellStyle": "none",
+      "colorScheme": "Catppuccin Mocha",
+      "cursorShape": "filledBox",
+      "font": {
+        "face": "CaskaydiaCove NFM",
+        "features": {
+          "calt": 1,
+          "liga": 1
+        },
+        "size": 11,
+        "weight": "normal"
+      },
+      "historySize": 20000,
+      "intenseTextStyle": "bright",
+      "opacity": 92,
+      "padding": "12,10,12,6",
+      "scrollbarState": "hidden",
+      "snapOnInput": true,
+      "useAcrylic": false
+    }
+  },
+  "themes": [],
+  "actions": [],
+  "alwaysShowTabs": true,
+  "copyFormatting": "none",
+  "copyOnSelect": true,
+  "focusFollowMouse": false,
+  "initialCols": 140,
+  "initialRows": 38,
+  "keybindings": [
+    {
+      "id": "Terminal.MoveFocusDown",
+      "keys": "alt+down"
+    },
+    {
+      "id": "Terminal.ResetFontSize",
+      "keys": "ctrl+0"
+    },
+    {
+      "id": "Terminal.MoveFocusLeft",
+      "keys": "alt+left"
+    },
+    {
+      "id": "Terminal.PasteFromClipboard",
+      "keys": "ctrl+v"
+    },
+    {
+      "id": "Terminal.FindText",
+      "keys": "ctrl+shift+f"
+    },
+    {
+      "id": "Terminal.TogglePaneZoom",
+      "keys": "ctrl+shift+z"
+    },
+    {
+      "id": "Terminal.ClosePane",
+      "keys": "ctrl+shift+w"
+    },
+    {
+      "id": "Terminal.MoveFocusUp",
+      "keys": "alt+up"
+    },
+    {
+      "id": "Terminal.MoveFocusRight",
+      "keys": "alt+right"
+    },
+    {
+      "id": "Terminal.DuplicatePaneAuto",
+      "keys": "alt+shift+d"
+    },
+    {
+      "id": "Terminal.ToggleCommandPalette",
+      "keys": "ctrl+shift+p"
+    },
+    {
+      "id": "Terminal.ToggleFocusMode",
+      "keys": "f11"
+    },
+    {
+      "id": "Terminal.CopyToClipboard",
+      "keys": "ctrl+c"
+    },
+    {
+      "id": "Terminal.DuplicatePaneRight",
+      "keys": "alt+shift+right"
+    },
+    {
+      "id": "Terminal.DuplicatePaneDown",
+      "keys": "alt+shift+down"
+    },
+    {
+      "id": "Terminal.IncreaseFontSize",
+      "keys": "ctrl+numpad_plus"
+    },
+    {
+      "id": "Terminal.DecreaseFontSize",
+      "keys": "ctrl+numpad_minus"
+    }
+  ],
+  "newTabMenu": [
+    {
+      "type": "remainingProfiles"
+    }
+  ],
+  "showTabsInTitlebar": true,
+  "tabWidthMode": "titleLength",
+  "theme": "dark",
+  "useAcrylicInTabRow": true,
+  "schemes": [
+    {
+      "background": "#EFF1F5",
+      "black": "#5C5F77",
+      "blue": "#1E66F5",
+      "brightBlack": "#6C6F85",
+      "brightBlue": "#1E66F5",
+      "brightCyan": "#179299",
+      "brightGreen": "#40A02B",
+      "brightPurple": "#EA76CB",
+      "brightRed": "#D20F39",
+      "brightWhite": "#BCC0CC",
+      "brightYellow": "#DF8E1D",
+      "cursorColor": "#DC8A78",
+      "cyan": "#179299",
+      "foreground": "#4C4F69",
+      "green": "#40A02B",
+      "name": "Catppuccin Latte",
+      "purple": "#EA76CB",
+      "red": "#D20F39",
+      "selectionBackground": "#ACB0BE",
+      "white": "#ACB0BE",
+      "yellow": "#DF8E1D"
+    },
+    {
+      "background": "#1E1E2E",
+      "black": "#45475A",
+      "blue": "#89B4FA",
+      "brightBlack": "#585B70",
+      "brightBlue": "#89B4FA",
+      "brightCyan": "#94E2D5",
+      "brightGreen": "#A6E3A1",
+      "brightPurple": "#F5C2E7",
+      "brightRed": "#F38BA8",
+      "brightWhite": "#A6ADC8",
+      "brightYellow": "#F9E2AF",
+      "cursorColor": "#F5E0DC",
+      "cyan": "#94E2D5",
+      "foreground": "#CDD6F4",
+      "green": "#A6E3A1",
+      "name": "Catppuccin Mocha",
+      "purple": "#F5C2E7",
+      "red": "#F38BA8",
+      "selectionBackground": "#585B70",
+      "white": "#BAC2DE",
+      "yellow": "#F9E2AF"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+# Generated at first shell start, never bundled
+gh-completion.ps1
+
+# Backups written by install.ps1
+*.bak
+
+# Local, machine-specific overrides (sourced by the profile if present)
+config/profile.local.ps1
+
+# OS / editor noise
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
