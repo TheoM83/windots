@@ -1,19 +1,19 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Install windots — PowerShell 7 + Windows Terminal, Catppuccin Mocha, end to end.
+    Install windots -- PowerShell 7 + Windows Terminal, Catppuccin Mocha, end to end.
 
 .DESCRIPTION
     Idempotent. Re-run it any time: anything already correct is reported and left alone.
 
     What it does, in order:
-      0. preflight  — Windows + winget
-      1. packages   — winget (pwsh, git, gh, starship, zoxide, fzf, fd, rg, bat, eza, delta, gsudo, WT)
-      2. relaunch   — re-executes itself under pwsh 7 once pwsh exists
-      3. modules    — PowerShell modules, CurrentUser scope
-      4. font       — CaskaydiaCove Nerd Font Mono, per-user (no admin)
-      5. config     — profile, starship, bat, git, Windows Terminal
-      6. verify     — prints what is actually live
+      0. preflight  -- Windows + winget
+      1. packages   -- winget (pwsh, git, gh, starship, zoxide, fzf, fd, rg, bat, eza, delta, gsudo, WT)
+      2. relaunch   -- re-executes itself under pwsh 7 once pwsh exists
+      3. modules    -- PowerShell modules, CurrentUser scope
+      4. font       -- CaskaydiaCove Nerd Font Mono, per-user (no admin)
+      5. config     -- profile, starship, bat, git, Windows Terminal
+      6. verify     -- prints what is actually live
 
     Nothing here needs admin. Existing files are backed up once to <name>.windots-backup
     before the first overwrite, and the Windows Terminal settings are *merged*, not replaced,
@@ -38,7 +38,7 @@
 
 .EXAMPLE
     .\install.ps1 -SkipPackages -SkipFont
-    Config only — useful when re-applying after editing the repo.
+    Config only -- useful when re-applying after editing the repo.
 
 .LINK
     https://github.com/TheoM83/windots
@@ -199,7 +199,7 @@ function Invoke-Preflight {
     Write-Skip 'winget available'
 
     if (-not (Test-Path -LiteralPath $ConfigDir)) {
-        throw "config directory not found at $ConfigDir — run install.ps1 from inside a windots clone."
+        throw "config directory not found at $ConfigDir -- run install.ps1 from inside a windots clone."
     }
     Write-Skip "source: $RepoRoot"
 }
@@ -219,7 +219,7 @@ function Get-InstalledPackageId {
             }
         }
     } catch {
-        Write-Warn "could not enumerate installed packages ($($_.Exception.Message)) — will let winget decide"
+        Write-Warn "could not enumerate installed packages ($($_.Exception.Message)) -- will let winget decide"
     } finally {
         Remove-Item -LiteralPath $manifest -Force -ErrorAction Ignore -WhatIf:$false
     }
@@ -244,7 +244,7 @@ function Install-Packages {
         $code = $LASTEXITCODE
 
         if ($code -eq 0)                      { Write-Ok   "$id ($($p.Note))" }
-        elseif ($BenignWinget.ContainsKey($code)) { Write-Skip "$id — $($BenignWinget[$code])" }
+        elseif ($BenignWinget.ContainsKey($code)) { Write-Skip "$id -- $($BenignWinget[$code])" }
         else                                  { Write-Fail "$id failed (winget exit $code)" }
     }
 
@@ -317,7 +317,7 @@ function Install-Modules {
     if ($prl -and $prl.Version -ge [version] '2.4.0') {
         Write-Skip "PSReadLine $($prl.Version) (bundled with pwsh)"
     } else {
-        Write-Warn 'PSReadLine < 2.4 — F1 (ShowCommandHelp) and F2 (SwitchPredictionView) will not bind. Update PowerShell.'
+        Write-Warn 'PSReadLine < 2.4 -- F1 (ShowCommandHelp) and F2 (SwitchPredictionView) will not bind. Update PowerShell.'
     }
 }
 
@@ -395,8 +395,8 @@ function Install-Bat {
                        -Destination (Join-Path $batDir 'themes\Catppuccin Mocha.tmTheme') -Label 'bat theme'
 
     # Without a built cache the theme name does not resolve and delta silently loses its
-    # colours — but rebuilding costs a second, so only do it when the theme is genuinely stale.
-    if (-not (Test-Command 'bat')) { Write-Warn 'bat not on PATH — skipped `bat cache --build`'; return }
+    # colours -- but rebuilding costs a second, so only do it when the theme is genuinely stale.
+    if (-not (Test-Command 'bat')) { Write-Warn 'bat not on PATH -- skipped `bat cache --build`'; return }
 
     $themeFile = Join-Path $batDir 'themes\Catppuccin Mocha.tmTheme'
     $cacheFile = Join-Path (& bat --cache-dir 2>$null) 'themes.bin'
@@ -414,12 +414,12 @@ function Install-Bat {
 function Install-GitConfig {
     [CmdletBinding(SupportsShouldProcess)]
     param()
-    # An include leaves ~/.gitconfig — identity, credential helper, work overrides — untouched.
+    # An include leaves ~/.gitconfig -- identity, credential helper, work overrides -- untouched.
     $include = Join-Path $HOME '.config\git\windots.gitconfig'
     Install-ConfigFile -Source (Join-Path $ConfigDir 'gitconfig') `
                        -Destination $include -Label 'git config fragment'
 
-    if (-not (Test-Command 'git')) { Write-Warn 'git not on PATH — include not registered'; return }
+    if (-not (Test-Command 'git')) { Write-Warn 'git not on PATH -- include not registered'; return }
 
     # git expands `~` to an absolute path when it *writes* the value, and it mixes separators
     # doing so, so the registered entry never matches the string we passed in. Compare
@@ -457,7 +457,7 @@ function Install-GitConfig {
         } elseif ($current) {
             Write-Skip "$($pair.Key) = $current (kept)"
         } else {
-            Write-Warn "$($pair.Key) unset — run: git config --global $($pair.Key) '...'"
+            Write-Warn "$($pair.Key) unset -- run: git config --global $($pair.Key) '...'"
         }
     }
 }
@@ -480,7 +480,7 @@ function Merge-TerminalSettings {
         try {
             $current = Get-Content -LiteralPath $Destination -Raw | ConvertFrom-Json
         } catch {
-            Write-Warn "existing settings.json is not parseable ($($_.Exception.Message)) — replacing it wholesale"
+            Write-Warn "existing settings.json is not parseable ($($_.Exception.Message)) -- replacing it wholesale"
             $current = $null
         }
     } else {
@@ -500,7 +500,7 @@ function Merge-TerminalSettings {
         }
     }
 
-    # 2. profiles.defaults — ours wins key by key, anything extra locally is kept
+    # 2. profiles.defaults -- ours wins key by key, anything extra locally is kept
     if (-not ($current.PSObject.Properties.Name -contains 'profiles')) {
         Set-JsonProperty $current 'profiles' ([pscustomobject] @{})
     }
@@ -511,7 +511,7 @@ function Merge-TerminalSettings {
         Set-JsonProperty $current.profiles.defaults $p.Name $p.Value
     }
 
-    # 3. colour schemes — upsert by name
+    # 3. colour schemes -- upsert by name
     $schemes = @()
     if ($current.PSObject.Properties.Name -contains 'schemes' -and $current.schemes) {
         $schemes = @($current.schemes)
@@ -533,7 +533,7 @@ function Merge-TerminalSettings {
         Set-JsonProperty $pwshProfile 'startingDirectory' '%USERPROFILE%'
         Set-JsonProperty $current 'defaultProfile' $pwshProfile.guid
     } else {
-        Write-Warn 'no PowerShell Core profile in settings.json — defaultProfile left as is (open Windows Terminal once, then re-run)'
+        Write-Warn 'no PowerShell Core profile in settings.json -- defaultProfile left as is (open Windows Terminal once, then re-run)'
     }
 
     $json = $current | ConvertTo-Json -Depth 32
@@ -549,7 +549,7 @@ function Install-TerminalSettings {
 
     $wtDir = Join-Path $env:LOCALAPPDATA 'Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState'
     if (-not (Test-Path -LiteralPath $wtDir)) {
-        Write-Warn "Windows Terminal state not found — launch it once, then re-run with -SkipPackages"
+        Write-Warn "Windows Terminal state not found -- launch it once, then re-run with -SkipPackages"
         return
     }
     $dest   = Join-Path $wtDir 'settings.json'
@@ -592,19 +592,19 @@ function Invoke-Verify {
 
     foreach ($t in $tools) {
         if (-not (Test-Command $t)) { Write-Fail "$t not on PATH"; continue }
-        # first line carrying a version number — some tools lead with a tagline
+        # first line carrying a version number -- some tools lead with a tagline
         $line = @(& $t --version 2>&1 | Where-Object { $_ -match '\d+\.\d+' }) | Select-Object -First 1
         if (-not $line) { $line = '(version unknown)' }
         Write-Ok ('{0,-9} {1}' -f $t, (($line -replace '\s+', ' ').Trim()))
     }
 
     if (Test-FontPresent) { Write-Ok 'font      CaskaydiaCove NFM registered' }
-    else { Write-Warn 'font      CaskaydiaCove NFM missing — the prompt will show tofu' }
+    else { Write-Warn 'font      CaskaydiaCove NFM missing -- the prompt will show tofu' }
 
     if (Test-Command 'bat') {
         $themes = & bat --list-themes 2>$null
         if (($themes -join "`n") -match 'Catppuccin Mocha') { Write-Ok 'bat       Catppuccin Mocha theme resolves' }
-        else { Write-Warn 'bat       Catppuccin Mocha not in the cache — run: bat cache --build' }
+        else { Write-Warn 'bat       Catppuccin Mocha not in the cache -- run: bat cache --build' }
     }
 }
 
@@ -637,7 +637,7 @@ $ConfigDir = Join-Path $RepoRoot 'config'
 
 Write-Host ''
 Write-Host '  windots' -ForegroundColor Magenta -NoNewline
-Write-Host '  —  PowerShell 7 + Windows Terminal, Catppuccin Mocha'
+Write-Host '  --  PowerShell 7 + Windows Terminal, Catppuccin Mocha'
 Write-Host "  $RepoUrl" -ForegroundColor DarkGray
 
 Invoke-Preflight

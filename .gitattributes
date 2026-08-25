@@ -5,3 +5,8 @@
 *.otf   binary
 *.png   binary
 *.dll   binary
+
+# CI files stay LF: GitHub Actions runners are happier with them, and they are
+# never edited from a Windows-only editor anyway.
+*.yml  text eol=lf
+*.yaml text eol=lf

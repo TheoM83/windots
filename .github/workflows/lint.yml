@@ -1,0 +1,64 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: PSScriptAnalyzer
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: Install-PSResource -Name PSScriptAnalyzer -TrustRepository -Scope CurrentUser
+
+      - name: Parse every script
+        shell: pwsh
+        run: |
+          $failed = $false
+          foreach ($file in Get-ChildItem -Recurse -Filter *.ps1) {
+              $errors = $null
+              $null = [System.Management.Automation.Language.Parser]::ParseFile(
+                  $file.FullName, [ref]$null, [ref]$errors)
+              if ($errors) {
+                  $failed = $true
+                  Write-Host "::group::$($file.Name)"
+                  $errors | ForEach-Object {
+                      Write-Host "::error file=$($file.Name),line=$($_.Extent.StartLineNumber)::$($_.Message)"
+                  }
+                  Write-Host '::endgroup::'
+              }
+          }
+          if ($failed) { exit 1 }
+          Write-Host 'All scripts parse.'
+
+      - name: Analyze
+        shell: pwsh
+        run: |
+          $results = Invoke-ScriptAnalyzer -Path . -Recurse -Settings ./PSScriptAnalyzerSettings.psd1
+          if (-not $results) { Write-Host 'No findings.'; exit 0 }
+          $results | Format-Table -AutoSize | Out-String -Width 160 | Write-Host
+          foreach ($r in $results) {
+              $level = if ($r.Severity -eq 'Error') { 'error' } else { 'warning' }
+              Write-Host "::${level} file=$($r.ScriptName),line=$($r.Line)::$($r.RuleName): $($r.Message)"
+          }
+          if ($results | Where-Object Severity -eq 'Error') { exit 1 }
+
+      - name: install.ps1 must stay ASCII
+        shell: pwsh
+        # It carries #Requires -Version 5.1, and Windows PowerShell mangles a UTF-8 file
+        # that has no BOM. Staying ASCII sidesteps the whole problem.
+        run: |
+          $bad = @([System.IO.File]::ReadAllText('install.ps1').ToCharArray() |
+                   Where-Object { [int]$_ -gt 127 })
+          if ($bad.Count) {
+              Write-Host "::error file=install.ps1::$($bad.Count) non-ASCII character(s): $((($bad | Sort-Object -Unique) -join ' '))"
+              exit 1
+          }
+          Write-Host 'install.ps1 is pure ASCII.'
