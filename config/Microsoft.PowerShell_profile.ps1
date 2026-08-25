@@ -11,6 +11,15 @@
 
 $ProfileStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
+# Is this an interactive prompt, or `pwsh -Command ...` / `pwsh -File ...`?
+# Two things below must not happen in a one-shot session: the predictor subsystem keeps
+# the runspace alive so the process never exits, and PSReadLine's prediction options throw
+# when there is no real console. Both are pure ergonomics — a script loses nothing.
+$IsInteractiveShell = -not (
+    [Environment]::GetCommandLineArgs() |
+        Where-Object { $_ -match '^-+(c|command|f|file|e|ec|encodedcommand)$' }
+)
+
 # ---------------------------------------------------------------- 1. environment
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 $PSStyle.FileInfo.Directory = "`e[1;38;2;137;180;250m"   # catppuccin blue
@@ -39,9 +48,7 @@ $env:FZF_DEFAULT_OPTS    = @(
 Import-Module PSReadLine
 
 Set-PSReadLineOption -EditMode Windows
-# Prediction needs a real console. Skip it when output is redirected — `pwsh -Command ... | ...`
-# and CI runs otherwise dump two red errors before doing anything useful.
-if (-not [Console]::IsOutputRedirected) {
+if ($IsInteractiveShell -and -not [Console]::IsOutputRedirected) {
     Set-PSReadLineOption -PredictionSource HistoryAndPlugin
     Set-PSReadLineOption -PredictionViewStyle ListView
 }
@@ -132,8 +139,12 @@ Set-PSReadLineKeyHandler -Chord '(','{','[' -BriefDescription SmartBrace -Script
 
 # ---------------------------------------------------------------- 3. modules
 # Import only what is present: a half-provisioned machine still gets a usable shell.
-foreach ($m in 'Terminal-Icons', 'CompletionPredictor') {
-    if (Get-Module -ListAvailable -Name $m) { Import-Module $m }
+if (Get-Module -ListAvailable -Name Terminal-Icons) { Import-Module Terminal-Icons }
+
+# CompletionPredictor registers a predictor subsystem that keeps the runspace alive:
+# loading it in a one-shot session makes `pwsh -Command ...` hang instead of exiting.
+if ($IsInteractiveShell -and (Get-Module -ListAvailable -Name CompletionPredictor)) {
+    Import-Module CompletionPredictor
 }
 
 if ((Get-Command fzf -EA Ignore) -and (Get-Module -ListAvailable -Name PSFzf)) {
